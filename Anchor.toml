@@ -1,0 +1,17 @@
+[features]
+seeds = false
+[programs.localnet]
+simple_solana_program = "2Mk5dLg1RWWmPNcUBugUmX7NmQkgqQkBLfGfwyk74wp3"
+
+[programs.devnet]
+simple_solana_program = "2Mk5dLg1RWWmPNcUBugUmX7NmQkgqQkBLfGfwyk74wp3"
+
+[registry]
+url = "https://anchor.projectserum.com"
+
+[provider]
+cluster = "localnet"
+wallet = "/Users/hyunchuljung/.config/solana/phantom.json"
+
+[scripts]
+test = "yarn run mocha -t 1000000 tests/"
