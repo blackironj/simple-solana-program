@@ -1,64 +1,108 @@
 use anchor_lang::prelude::*;
 
-declare_id!("2Mk5dLg1RWWmPNcUBugUmX7NmQkgqQkBLfGfwyk74wp3");
+declare_id!("HmDuLNcKDjrmDdrJEQTycfNmRTo8XtKy3kCrkCQhajmB");
 
 #[program]
 mod simple_solana_program {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        let my_account = &mut ctx.accounts.my_account;
-        my_account.data = 0;
+    pub fn setup_platform(ctx: Context<TweetPlatform>) -> anchor_lang::Result<()> {
+        let tweet = &mut ctx.accounts.tweet;
+        tweet.likes = 0;
+        tweet.message = ("").to_string();
         Ok(())
     }
 
-    pub fn update(ctx: Context<Update>, data: u64) -> Result<()> {
-        let my_account = &mut ctx.accounts.my_account;
-        my_account.data = data;
+    pub fn write_tweet(
+        ctx: Context<WriteTweet>,
+        message: String,
+        user_public_key: Pubkey
+    ) -> anchor_lang::Result<()> {
+        let tweet = &mut ctx.accounts.tweet;
+
+        if !tweet.message.trim().is_empty() {
+            return Err(Errors::CannotUpdateTweet.into());
+        }
+
+        if message.trim().is_empty() {
+            return Err(Errors::EmtpyMessage.into());
+        }
+
+        tweet.message = message;
+        tweet.likes = 0;
+        tweet.creator = user_public_key;
+
         Ok(())
     }
-    
-    pub fn increment(ctx: Context<Increment>) -> Result<()> {
-        let my_account = &mut ctx.accounts.my_account;
-        my_account.data += 1;
-        Ok(())
-    }
-    
-    pub fn decrement(ctx: Context<Decrement>) -> Result<()> {
-        let my_account = &mut ctx.accounts.my_account;
-        my_account.data -= 1;
+
+    pub fn like_tweet(ctx: Context<LikeTweet>, user_liking_tweet: Pubkey) -> anchor_lang::Result<()> {
+        let tweet = &mut ctx.accounts.tweet;
+
+        if tweet.message.trim().is_empty() {
+            return Err(Errors::NotValidTweet.into());
+        }
+
+        if tweet.likes == 5 {
+            return Err(Errors::ReachedMaxLikes.into());
+        }
+
+        let mut iter = tweet.people_who_liked.iter();
+        if iter.any(|&v| v == user_liking_tweet) {
+            return Err(Errors::UserLikedTweet.into());
+        }
+
+        tweet.likes += 1;
+        tweet.people_who_liked.push(user_liking_tweet);
+
         Ok(())
     }
 }
 
 #[derive(Accounts)]
-pub struct Initialize<'info> {
-    #[account(init, payer = user, space = 8 + 8)]
-    pub my_account: Account<'info, MyAccount>,
+pub struct TweetPlatform<'info> {
+    #[account(init, payer = user, space = 9000 )]
+    pub tweet: Account<'info, Tweet>,
     #[account(mut)]
     pub user: Signer<'info>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-pub struct Update<'info> {
+pub struct WriteTweet<'info> {
     #[account(mut)]
-    pub my_account: Account<'info, MyAccount>,
+    pub tweet: Account<'info, Tweet>,
 }
 
 #[derive(Accounts)]
-pub struct Increment<'info> {
+pub struct LikeTweet<'info> {
     #[account(mut)]
-    pub my_account: Account<'info, MyAccount>,
+    pub tweet: Account<'info, Tweet>
 }
 
-#[derive(Accounts)]
-pub struct Decrement<'info> {
-    #[account(mut)]
-    pub my_account: Account<'info, MyAccount>,
+#[account] //An attribute for a data structure representing a Solana account.
+#[derive(Default)]
+pub struct Tweet {
+    message: String,
+    likes: u8,
+    creator: Pubkey,
+    people_who_liked: Vec<Pubkey>, // with  #[derive(Default)] we can assign default values
 }
 
-#[account]
-pub struct MyAccount {
-    pub data: u64,
+
+#[error_code]
+pub enum Errors {
+    #[msg("Tweet message cannot be updated")]
+    CannotUpdateTweet,
+
+    #[msg("Message cannot be empty")]
+    EmtpyMessage,
+
+    #[msg("Cannot receive more than 5 likes")]
+    ReachedMaxLikes,
+
+    #[msg("Cannot like a tweet without a valid message")]
+    NotValidTweet,
+
+    #[msg("User has already liked the tweet")]
+    UserLikedTweet,
 }

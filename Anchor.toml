@@ -1,10 +1,10 @@
 [features]
 seeds = false
 [programs.localnet]
-simple_solana_program = "2Mk5dLg1RWWmPNcUBugUmX7NmQkgqQkBLfGfwyk74wp3"
+simple_solana_program = "HmDuLNcKDjrmDdrJEQTycfNmRTo8XtKy3kCrkCQhajmB"
 
 [programs.devnet]
-simple_solana_program = "2Mk5dLg1RWWmPNcUBugUmX7NmQkgqQkBLfGfwyk74wp3"
+simple_solana_program = "HmDuLNcKDjrmDdrJEQTycfNmRTo8XtKy3kCrkCQhajmB"
 
 [registry]
 url = "https://anchor.projectserum.com"
@@ -14,4 +14,4 @@ cluster = "localnet"
 wallet = "/Users/hyunchuljung/.config/solana/phantom.json"
 
 [scripts]
-test = "yarn run mocha -t 1000000 tests/"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
